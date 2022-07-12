@@ -146,6 +146,7 @@ Adder::new;
 
 ### Optionals
 - immutable container used to contain a non-null value of any Object type
+- benefits: avoids NPEs and `if (x == null)`
 ```java
 Optional<Integer> v1 = Optional.of(5); // Optional[5]
 Optional<Integer> v2 = Optional.empty(); // empty Optional
@@ -183,4 +184,53 @@ users.lookup(userId)
   .flatMap(user -> user.email)
   .orElse(null);
 ```
+- Unwrapping an Optional
+  - `get()`: returns the contents if present, otherwise throws an exception should be avoided, anti-pattern
+  - `orElse(fallbackValue)`
+  - `orElseGet(() -> fallbackComputation())`
+  - `orElseThrow(() -> generateException())`
+  - `isPresent()`: using optional imperatively, better option - `ifPresent(v -> useValue(v))`
 
+### Stream
+- a sequence of objects which supports various methods taht can be pipelined together to get the desired result
+- not a data structure, but can take input from different data structures
+- immutable
+- benefit: avoids explicit for/while-loops
+<img src="https://1.bp.blogspot.com/-XEU2WqWiI4g/XZc3e0v8djI/AAAAAAAAAhg/WTdc1dqVwiUAmizN-abuvSNRWuYSy_UrQCEwYBhgL/s1600/Ska%25CC%2588rmavbild%2B2019-10-03%2Bkl.%2B09.42.17.png" height="300px">
+
+```java
+list.stream()                     // generator
+  .map(e -> e.name())             // operation: not applied straight awai
+  .filter(n -> !n.isEmpty())      // operation
+  .findFirst()                    // terminator, returns Optional<T>
+```
+- Generators: used to feed data into the streams
+  - `Stream.empty()`: Empty stream
+  - `Stream.of(1,2,3)`: Stream of three elements
+  - `list.stream()`: Stream from a List, can be used on any Java Collection
+  - `map.entrySet().stream()`: Stream from the entries in a map
+- A stream only be consumed once
+```java
+Stream<Integer> nStream = Stream.of(1,2,3);
+nStream.map(x -> x * 2).forEach(System.out::println);
+nStream.map(x -> x * 3).forEach(System.out::println); // throws IllegalSstateException (nStream is closed)
+```
+- Collectors: `toList()`, `toSet()`, `toCollection()`
+```java
+numbers.collect(Collectors.toCollection(LinkedList::new));
+```
+- `Collectors.toMap(keyMapper, valueMapper, mergeFunction)`: `mergeFunction`: is used if there are conflicting keys in the map.
+```java
+numbers
+  .collect(Collectors.toMap(
+    Function.identity(),
+    i -> i * 100,
+    (oldV, newV) -> newV       // use new value in case of conflict
+  ));
+```
+- `groupingBy(keyExtractor)`: groups a stream into a Map based on a given function
+```java
+Map<String, List<Employee>> byDept
+  = employees.stream()
+      .collect(Collectors.groupingBy(Employee::getDepartment));
+```
