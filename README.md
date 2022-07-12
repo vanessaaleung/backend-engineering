@@ -187,7 +187,7 @@ users.lookup(userId)
 - Unwrapping an Optional
   - `get()`: returns the contents if present, otherwise throws an exception should be avoided, anti-pattern
   - `orElse(fallbackValue)`
-  - `orElseGet(() -> fallbackComputation())`
+  - `orElseGet(() -> fallbackComputation())`: requires a Supplier
   - `orElseThrow(() -> generateException())`
   - `isPresent()`: using optional imperatively, better option - `ifPresent(v -> useValue(v))`
 
