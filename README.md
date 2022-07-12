@@ -4,6 +4,9 @@
 - [Scaling](#scaling)
 - [Monitoring](#monitoring)
 - [Functional Programming](#functional-programming)
+- [Asynchronous Programming](#asynchronous-programming)
+- [Threads](#threads)
+- [CompletableFutures](#completablefutures)
 
 ## Monolith vs Microservices Architecture
 - Monolith: User Interface + Business Logic + Data Access Layer in a single code base
@@ -233,4 +236,178 @@ numbers
 Map<String, List<Employee>> byDept
   = employees.stream()
       .collect(Collectors.groupingBy(Employee::getDepartment));
+```
+
+## Asynchronous Programming
+- Pros: Allows multiple things to happen at the same time. It doesn't block the execution flow
+<img src="https://www.baeldung.com/wp-content/uploads/sites/4/2020/07/sync.png" height="300px">
+
+- Service-Oriented Architecture (SOA): each service will have to talk to other systems to reach its objective
+- Each request is handled on a separate "thread"
+- Cons: Codes get convoluted. Shared state and mutable objects should be avoided/used in a "thread-safe" manner
+
+## Thread
+- A unit of execution within a process
+- Each thread runs a path of execution through the program
+- When starting an application, execution begins on the Main Trhead
+- Additional trheads may be spun off to execute code in parallel to the main thread
+  - e.g. The main thread gets a list of files on the file system, then spins off 10 threads to each process 1/10th of the files
+- The program will exit when the Main Thread commpletes execution
+  - Must explicitly tell the Main Thread to wait for the completion of the "child" threads
+<img src="https://miro.medium.com/max/1838/0*FOD_35FfbwsXnnx6.png" height="300px">
+
+```java
+class MyCustomThread extends Thread {
+  @Override
+  public void run() {
+    for (int i = 0; i < 10; i++) {
+      System.out.println("From Thread: " + i);
+     }
+    }
+  }
+}
+
+MyCustomThread thread = new MyCustomThread();
+
+thread.start();
+```
+
+```java
+class Printer extends Thread {
+  private int id;
+  public Printer(int id) { this.id = id; }
+  
+  @Override
+  public void run() {
+    for (int i = 1; i <= 3; i++) {
+      System.out.println("[Thread " + id + "]: " + i);
+    }
+  }
+}
+
+Printer printer1 = new Printer(1);
+Printer printer2 = new Printer(2);
+printer1.start();
+printer2.start();
+
+printer1.join();
+printer2.join();
+```
+- Thread vvs Runnable
+  - Implementing Runnable interface is generally considered to be better
+  - Runnable favors composition over inheritance
+  - Runnable allows execution to be handled by an ExecutorService
+  - Java doesn't support multiple inheritance. Runnable alllos to extend fro ma superclass besides Thread
+
+### Thread Pool
+- a way to reuse previously created threads in order to execute tasks
+- certain predefined limits are established (e.g. number of threads) prior to the creation of the pool
+```java
+// Threadpool with 1 Thread
+Executor e1 = Executors.newSingleThreadExecutor()
+Executor e2 = Executors.newFixedThreadPool(10)
+```
+
+### ExecutorService
+- An interface designed to allow you to easily submit tasks which need to be executed
+- Contains methods for **controlling the progress** of the tasks which are submitted to it
+- Allows a Runnable or a Callable to be submitted and executed asyncchronously on a Threadpool
+- Maintains a blocking queue which can take requests and execute them as resources become available
+<img src="https://www.baeldung.com/wp-content/uploads/2016/08/2016-08-10_10-16-52-1024x572.png" height="300px">
+
+```java
+ExecutorService ex = Executors.newSingleThreadExecutor();
+ex.submit(() -> {
+  for (int i = 0; i < 10; i++) {
+    System.out.println("From Runnable: " + i);
+  }
+});
+```
+
+## Callable & Future
+- Runnable interface cannot produce a result
+- Callable interface allows you to execute async code, but also provides utilities to return a result
+- The result returned by Callable is a Future
+- It can also throw exceptions fro the block of computation
+<img src="https://static.javatpoint.com/core/images/callable-and-future-in-java.png" height="300px">
+
+### Future
+- Represents the result of an async computation
+- Provides methods to retrieve result from an async computation and also to check its status
+- Methods offered by the Future Interface: `get()`, `get(timeout, timeUnit)`, `isDone()`, `cancel()`, `isCancelled()`
+  - `get()`: try to avoid using it. Waits indefinitely for the result of the async computation
+  - `get(timeout, timeUnit)`: similar to `get()`, but only waits for a specific time
+```java
+Callable<Integer> c = 
+  () -> IntStream
+          .range(1, 1000)
+          .reduce()
+          .getAsInt();
+ExecutorService ex = Executors.newSingleThreadExecutor();
+Future<Integer> f = ex.submit(c);
+
+System.out.println("Is it done: " + f.isDone());  // could be True or False
+System.out.println("Result: " + f.get());         // will wait for the result of the async computation
+System.out.println("Is it done: " + f.isDone());  // will always be True
+```
+- Is old and busted
+- CompletableFuture is new
+- Won't deal with Future or Executors directly. Will instead interact with libraries returning them
+
+### CompletableFuture
+- Implements the Future and CompletionStage interfaces
+- Allows you to create complex chains of async events
+- Functions should return a CompletionStage (the interface)
+- CompletableFuture class has utilities for easily returning objects through CompletionStage interface
+- Chained CompletionStages allow us to implement series of async tasks which depend on the results of one another
+- **thenApply**: takes the result of a CompletionStage, then returns its own result
+```java
+public CompletionStage<List<String>> getArtistGenres(final String artistId) {
+  CompletionStage<Artist> artistFuture = metadataClient.getArtist(artistId);
+  
+  return artistFuture.thenApply(artistMetadata -> {
+    reutrn artistMetadata.genres();
+  });
+}
+```
+- **thenComposeAsync**: takes the result of a CompletionStage, then returns another CompletionStage whcih gets unnestest into the parent
+```java
+public CompletionStage<Map<String, String>> getArtistGenresWithDetails(final String artistId) {
+  CompletionStage<Artist> artistGenresFuture = getArtistGenres(artistId);
+  
+  return artistGenresFuture.thenComposeAsync(artistGenreList -> {
+    // getGenreDetails returns CompletionStage<Map<String, String>>
+    reutrn genreClient.getGenreDetails(artistGenreList);
+  });
+}
+```
+- **thenCompose**: chain CompletionStage within thenCompose
+```java
+public CompletionStage<Map<String, String>> getArtistGenresWithDetails(final String artistId) {
+  CompletionStage<Artist> artistGenresFuture = getArtistGenres(artistId);
+  
+  return artistGenresFuture.thenCompose(artistGenreList -> {
+    // getGenreDetails returns CompletionStage<Map<String, String>>
+    return genreClient.getGenreDetails(artistGenreList)
+            .thenApply(genreDetails -> {
+                return genreDetails.entrySet().stream()
+                          .map()
+                          .collect();
+            });
+  });
+}
+```
+- **thenCombine**: execute two CompletionStages in parallel and take action on the result of both futures when they complete
+- **thenAccept**: consumes the result of a CompletionStage, but doesn't return anything
+- **supplyAsync/completedFuture**: create a CompletableFuture from a synchronous object/task
+
+  });
+}
+- **.exceptionally()**: Exception Handling
+```java
+  return artistFuture.thenApply()
+          .exceptionally(e -> {
+            LOG.error(e);
+            return List.of();  // returns an empty list
+          });
 ```
