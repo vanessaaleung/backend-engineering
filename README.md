@@ -5,8 +5,8 @@
 - [Monitoring](#monitoring)
 - [Functional Programming](#functional-programming)
 - [Asynchronous Programming](#asynchronous-programming)
-- [Threads](#threads)
-- [CompletableFutures](#completablefutures)
+- [Thread](#thread)
+- [CompletableFuture](#completablefuture)
 
 ## Monolith vs Microservices Architecture
 - Monolith: User Interface + Business Logic + Data Access Layer in a single code base
