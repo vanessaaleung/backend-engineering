@@ -7,6 +7,7 @@
 - [Asynchronous Programming](#asynchronous-programming)
 - [Thread](#thread)
 - [CompletableFuture](#completablefuture)
+- [Apollo, gRPC, Hermes](#apollo-grpc-hermes)
 
 ## Monolith vs Microservices Architecture
 - Monolith: User Interface + Business Logic + Data Access Layer in a single code base
@@ -411,3 +412,49 @@ public CompletionStage<Map<String, String>> getArtistGenresWithDetails(final Str
             return List.of();  // returns an empty list
           });
 ```
+
+## Apollo, gRPC, Hermes
+- [Apollo](#apollo)
+### Apollo
+- Apollo: manages modules lifecycle. A module can be a server or anything
+```java
+final Service service = 
+  Services.usingName(SERVICE_NAME)
+    .withModule(...)
+    .withEnvVarPrefix("")
+    ...
+    build();
+StandaloneService.boot(service, args);
+```
+- Apollo API - Environment
+  - `Environment.resolve()`: resolves an instance of a class out of the underlying module system
+  - `.config()`: get all the config values
+  - `.closer()`: shutting down the application gracefully
+  - `.routingEngine()`: register Hermes endpoints
+- Config file:
+  - `<service-name>.conf`
+  - run locally, may not want to use production secret/database, use `<service-name>-user.conf` will override the production config
+  ```yaml
+  grpc.server {
+    port: 5990
+    healthService.enabled: true
+  }
+  hermes.server {
+    port: 5700
+  }
+  ```
+- Service Auth
+  - Authentication: proven identity of the calling service
+  - Authorization: control what different calling services have access to
+  ```yaml
+  serviceauth {
+    enabled: true
+    enforcing: true
+    defaultAction: "deny"
+    accessPolicies: [
+      { matchType: "prefix", path: "/_meta/0/", method: "GET", principals: [] },
+      ...
+    ]
+  ```
+    
+
