@@ -132,4 +132,93 @@ StandaloneService.boot(service, args);
   ```
 - gRPC Service Concat in Java
 ```java
+class ConcatResource extends ConcatServiceImplBase {
+  @Override
+  void concat(final ConcatRequest request,
+            final StreamObserver<ConcatResponse> response) {
+    response.onNext(
+      ConcatResponse.newBuilder()     // Build the response
+        .setResponse(request.getStringOne() + request.getStringTwo())
+        .build()
+    );
+    response.onCompleted();      // tell the caller all response have been sent, no need to wait for anything anymore
+}
+```
+- gRPC Server in plain Java
+```java
+import io.grpc.Server;
+import io.grps.ServerBuilder;
+
+public class ConcatServer {
+  private Server server;
+  private void start() throws IOException {
+    server = ServerBuilder.forPort(50051)
+       .addService(new ConcatResource())
+       .build()
+       .start();
+  ...
+}
+```
+- gRPC Server in Apollo
+```java
+public static void main(final String...args) {
+  final Service service = 
+    ...
+    .withModule(GrpcServerModule.create())
+    .withModule(GrpcServerInterceptorsModule.create())
+static void configure(final Environment environment) {
+  final GrpcServer grpcServer = environment.resolve(GrpcServer.class);
+  grpcServer.addService(new ConcatResource());  // add your API/Resource
+  grpcServer.start();
+```
+- gRPC Client
+  - Channel: connects to the remote server, using host:port or service discovery
+  - Stub: client-side object representing the server, Call `stub.sayHello(...)` = make a remote call to the server
+    - Blocking stub: mainly for testing purposes, don't wanna block threads if possible
+    - Async stub
+    - Future stubs
+  - gRPC Client in Java
+  ```java
+  import io.grpc.ManagedChannel;
+  import io.grpc.ManagedChannelBuilder;
+  ManagedChannel channel = ManagedChannelBuilder.forAddress(host, port).build();
+  GreeterGrpc.GreeterBlockingStub blockingStub = GreeterGrpc.newBlockingStub(channel);
+  blockingStub.sayHello(...)
+  ```
+  - gRPC Client in Apollo
+  ```java
+  public static void main() {
+    final Service service = ...
+  }
+  GrpcChannelFactory chFactory = env.resolve(GrpcChannelFactory.class);
+  ManagedChannel channel = chFactory.forTarget("nls://greeter").usePlaintext().build();   // nls: service discovery protocol + service_name
+  GreeterGrpc.GreeterServiceStub stub = GreeterGrpc.newStub(channel);
+  ```
+  - gRPC Client Call
+  ```java
+  HelloRequest request = HelloRequest.newBuilder()
+    .setName("")
+    .build();
+  try {
+    HelloReply response = blockingStub.sayHello(request);
+    logger.info("Greeting: " + response.getMessage());
+  } catch (StatusRuntimeException e) {
+    logger.log(...);
+    return;
+  }
+  ```
+  - gRPC Client Call from a gRPC service
+  ```java
+  favoriteSongServiceStub.withDeadline(Deadline.after(1000, MILLISECONDS))
+    .getFavorite(
+      GetTrackRequest.newBuilder()
+        .setUsername(request.getName())
+        .build())
+  ```
+  - grpcurl
+    ```
+    grpcurl -max-time 2 -plaintext -d '{JSON_INPUT}' <host>:<port> ...
+    ```
+    will translate JSON_INPUT to protobuf
+  - spgrpcurl: wrapper for grpcurl
   
