@@ -104,25 +104,44 @@ message PersonName {
   - gRPC - ListenableFuture (Guaba)
 
 ### gRPC Service Implementation
-  - gRPC is based around the idea of defining a service, specifying the methods that can be called remotely with their parameters and return types. 
-  - On the server side, the server implements this interface and runs a gRPC server to handle client calls.
-  - On the client side, the client has a stub (referred to as just a client in some languages) that provides the same methods as the server.
-  ```java
-  class GreeterImpl extends GreeterGrpc.GreeterImplBase
+- gRPC is based around the idea of defining a service, specifying the methods that can be called remotely with their parameters and return types. 
+- On the server side, the server implements this interface and runs a gRPC server to handle client calls.
+- On the client side, the client has a stub (referred to as just a client in some languages) that provides the same methods as the server.
+- gRPC lets you define four kinds of service method:
+  - Unary RPCs: the client sends a single request to the server and gets a single response back.
+  <br></br>
+  ```rpcgen
+  rpc SayHello(HelloRequest) returns (HelloResponse);
   ```
-  - Implement a method for each RPC
-  
-    **.proto**
-    ```protobuf
-    rpc SayHello (HelloRequest) returns (HelloReply) {}
-    ```
-    **.java**
-    ```java
-    public void sayHello(
-      HelloRequest request,
-      StreamObserver<HelloReply> responseObserver) {...}
-    ```
-  - StreamObserver<T>: a way to send back a reply
+  - Server streaming RPCs: the client sends a request to the server and gets a stream to read a sequence of messages back. The client reads from the returned stream until there are no more messages. gRPC guarantees message ordering within an individual RPC call.
+  <br></br>
+  ```rpcgen
+  rpc LotsOfReplies(HelloRequest) returns (stream HelloResponse);
+  ```
+  - Client streaming RPCs: the client writes a sequence of messages and sends them to the server. Once the client has finished writing the messages, it waits for the server to read them and return its response.
+  <br></br>
+  ```rpcgen
+  rpc LotsOfGreetings(stream HelloRequest) returns (HelloResponse);
+  ```
+  - Bidirectional streaming RPCs: both sides send a sequence of messages using a read-write stream. The two streams operate independently. The server could wait to receive all the client messages before writing its responses, or it could alternately read a message then write a message, or some other combination of reads and writes. The order of messages in each stream is preserved.
+  <br></br>
+  ```rpcgen
+  rpc BidiHello(stream HelloRequest) returns (stream HelloResponse);
+  ```
+
+- Implement a method for each RPC
+
+  **.proto**
+  ```rpcgen
+  rpc SayHello (HelloRequest) returns (HelloReply) {}
+  ```
+  **.java**
+  ```java
+  public void sayHello(
+    HelloRequest request,
+    StreamObserver<HelloReply> responseObserver) {...}
+  ```
+- StreamObserver<T>: a way to send back a reply
 - gRPC Service Concat in proto
   ```protobuf
   syntax = "proto3";
