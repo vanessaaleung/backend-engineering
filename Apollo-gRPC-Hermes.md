@@ -65,6 +65,9 @@ StandaloneService.boot(service, args);
 ### Protobuf (Protocol Buffers)
 - Serializing structured data
 - Alternative to JSON. More high-performance
+
+<img src="https://www.ionos.com/digitalguide/fileadmin/DigitalGuide/Screenshots_2020/diagram-of-grpc-workflow.png" height="300px">
+
 - Step 1. Define the structure ofr the data you want to serialize in a proto file
   - Protobuf data is structured as messages. A message is a small logical record of information containing a series of name-value pairs called fields.
 ```protobuf
@@ -74,24 +77,24 @@ message PersonName {
   string family_name = 3;
 }
 ```
-- All fields are optional
-- Need to pick a number that hasn't been used before. Don't need to be in sequential
-```protobuf
- syntax = "proto3"
+  - All fields are optional
+  - Need to pick a number that hasn't been used before. Don't need to be in sequential
+  ```protobuf
+   syntax = "proto3"
 
- service Greeter {   // Interface for a Greeter service
-  // Sends a greeting
-  rpc SayHello (HelloRequest) returns (HelloReply){}    // One rpc, with parameters and results
- }
- // Request message definition: containing a string field 'name'
- message HelloRequest {            
-  string name = 1;
- }
- // Response message definition
- message HelloReply {
-  string message = 1;
- }
- ```
+   service Greeter {   // Interface for a Greeter service
+    // Sends a greeting
+    rpc SayHello (HelloRequest) returns (HelloReply){}    // One rpc, with parameters and results
+   }
+   // Request message definition: containing a string field 'name'
+   message HelloRequest {            
+    string name = 1;
+   }
+   // Response message definition
+   message HelloReply {
+    string message = 1;
+   }
+   ```
 - Step 2. Use protoc (Protobuf compiler) to generate data access classes in your preferred languages from your proto definition
  - Provides simple accessors for each field like `name()` and `set_name()`
  - Maven plugin: `mvn generate-sources` will invoke protoc and compile all the schemas to java codes
@@ -108,17 +111,19 @@ message PersonName {
 - On the server side, the server implements this interface and runs a gRPC server to handle client calls.
 - On the client side, the client has a stub (referred to as just a client in some languages) that provides the same methods as the server.
 - gRPC lets you define four kinds of service method:
+  <img src="https://www.t2.sa/sites/default/files/inline-images/grpc-2.png" height="300px">
+  
   - Unary RPCs: the client sends a single request to the server and gets a single response back.
   <br></br>
   ```rpcgen
   rpc SayHello(HelloRequest) returns (HelloResponse);
   ```
-  - Server streaming RPCs: the client sends a request to the server and gets a stream to read a sequence of messages back. The client reads from the returned stream until there are no more messages. gRPC guarantees message ordering within an individual RPC call.
+  - Server streaming RPCs: the server returns a stream of messages. The client completes once it has all the server's messages.
   <br></br>
   ```rpcgen
   rpc LotsOfReplies(HelloRequest) returns (stream HelloResponse);
   ```
-  - Client streaming RPCs: the client writes a sequence of messages and sends them to the server. Once the client has finished writing the messages, it waits for the server to read them and return its response.
+  - Client streaming RPCs: the client sends a stream of messages to the server. The server responds with a single message typically after it has received all the client's messages.
   <br></br>
   ```rpcgen
   rpc LotsOfGreetings(stream HelloRequest) returns (HelloResponse);
@@ -128,6 +133,12 @@ message PersonName {
   ```rpcgen
   rpc BidiHello(stream HelloRequest) returns (stream HelloResponse);
   ```
+- RPC life cycle
+  1. Once the **client calls a stub method**, the server is notified that the RPC has been invoked with the client’s metadata for this call, the method name, and the specified deadline if applicable.
+  2. The **server** can then either **send back its own initial metadata** (which must be sent before any response) straight away, **or wait for the client’s request message**. Which happens first, is application-specific.
+  3. Once the **server** has the client’s request message, it does whatever work is necessary to **create and populate a response**. The response is then **returned (if successful) to the client** together with status details (status code and optional status message) and optional trailing metadata.
+  4. If the response status is OK, then the client gets the response, which **completes the call on the client side**.
+
 
 - Implement a method for each RPC
 
