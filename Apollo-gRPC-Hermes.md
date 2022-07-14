@@ -56,14 +56,17 @@ StandaloneService.boot(service, args);
 
 ### gRPC
 - google Remote Procedure Call
-  - running a function on a remote system and get back the result
+  - In gRPC, a client application can directly call a method on a server application **on a different machine as if it were a local object**, making it easier for you to create distributed applications and services. 
 <img src="https://grpc.io/img/landing-2.svg" height="300px">
+
+- [Official Documentation](https://grpc.io/docs/what-is-grpc/introduction/)
 - Open source
 - HTTP/2 transport
-- Protobuf schema
-  - Alternative to JSON. More high-performance
-  - Predefine the entire schema
+- Protobuf (Protocol Buffers) schema
   - Serializing structured data
+  - Alternative to JSON. More high-performance
+  - Step 1. Define the structure ofr the data you want to serialize in a proto file
+    - Protobuf data is structured as messages. A message is a small logical record of information containing a series of name-value pairs called fields.
   ```protobuf
   message PersonName {
     string first_name = 1;
@@ -77,31 +80,31 @@ StandaloneService.boot(service, args);
    syntax = "proto3"
    
    service Greeter {   // Interface for a Greeter service
+    // Sends a greeting
     rpc SayHello (HelloRequest) returns (HelloReply){}    // One rpc, with parameters and results
    }
-   message HelloRequest {            // Message/Type definition
-    string name = 1;                 // a string field 'name'
+   // Request message definition: containing a string field 'name'
+   message HelloRequest {            
+    string name = 1;
    }
+   // Response message definition
    message HelloReply {
     string message = 1;
    }
    ```
-- protoc: Protobuf compiler
-   - compiles into many languages
+  - Step 2. Use protoc (Protobuf compiler) to generate data access classes in your preferred languages from your proto definition
+   - Provides simple accessors for each field like `name()` and `set_name()`
    - Maven plugin: `mvn generate-sources` will invoke protoc and compile all the schemas to java codes
-   - Example
-     ```protobuf
-     service Greeter {
-      rpc SayHello (HelloRequest) returns (HelloReply) {}
-     }
-     ```
-     will get 
-      - HelloRequest.java, HelloReply.java
-      - GreeterGrpc.java
+   - For example, compiling the above protobuf will generate 
+     - HelloRequest.java, HelloReply.java
+     - GreeterGrpc.java
 - gRPC and futures
   - Java - CompletableFuture
   - gRPC - ListenableFuture (Guaba)
 - gRPC Service Implementation
+  - gRPC is based around the idea of defining a service, specifying the methods that can be called remotely with their parameters and return types. 
+  - On the server side, the server implements this interface and runs a gRPC server to handle client calls.
+  - On the client side, the client has a stub (referred to as just a client in some languages) that provides the same methods as the server.
   ```java
   class GreeterImpl extends GreeterGrpc.GreeterImplBase
   ```
