@@ -119,6 +119,7 @@ message Point {
 
 ### Step 2. Generating client and server code
 _Generate gRPC client and server interfaces using protoc_
+
 Following classes will be generated from the example above
 - `Feature.java`, `Point.java`, `Rectangle.java` and others which contain all the protocol buffer code to populate, serialize, and retrieve our reques tand response message types.
 - `RouteGuideGrpc.java`: contains
@@ -138,9 +139,9 @@ Following classes will be generated from the example above
   - Blocking stub: the RPC calls waits for the server to respond. Mainly for testing purposes, as we don't wanna block threads if possible.
   - Non-blocking/Asynchronous stub: response is returned asynchronously
   - Future stubs
+- **Channel**: connects to the remote server, specifying the server address and port we want to connect to
 <br></br>
 - Step 6.1.1 - Create a gRPC channel for the stub
-  - Channel: connects to the remote server, specifying the server address and port we want to connect to
   ```java
   public RouteGuideClient(String host, int port) {
     this(ManagedChannelBuilder.forAddress(host, port).usePlaintext());
