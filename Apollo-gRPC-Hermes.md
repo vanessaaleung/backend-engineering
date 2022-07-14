@@ -295,6 +295,12 @@ CompletionSstage<Response<String>> concat(final RequestContext context) {
   });
 }
 ```
+- gRPC or Hermes
+
+|Use Case                |gRPC                                      |Hermes                           |
+|------------------------|------------------------------------------|---------------------------------|
+|Backend to backend calls|Preferred if supported by upstream service|Preferred if gRPC isn't supported|
+|Client (mobile or web) to backend calls|N/A                        |Supported                        |
 
   
   
