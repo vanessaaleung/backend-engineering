@@ -57,6 +57,7 @@ StandaloneService.boot(service, args);
 ### gRPC
 - google Remote Procedure Call
   - running a function on a remote system and get back the result
+<img src="https://grpc.io/img/landing-2.svg" height="300px">
 - Open source
 - HTTP/2 transport
 - Protobuf schema
