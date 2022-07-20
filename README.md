@@ -10,6 +10,7 @@
 - [Apollo, gRPC, Hermes](https://github.com/vanessaaleung/backend-engineering/blob/main/Apollo-gRPC-Hermes.md)
 - [Testing](https://github.com/vanessaaleung/backend-engineering-learning/blob/main/testing.md)
 - [Monitoring](https://github.com/vanessaaleung/backend-engineering-learning/blob/main/monitoring.md)
+- [Deployment](https://github.com/vanessaaleung/backend-engineering-learning/blob/main/deployment.md)
 
 ## Monolith vs Microservices Architecture
 - Monolith: User Interface + Business Logic + Data Access Layer in a single code base
